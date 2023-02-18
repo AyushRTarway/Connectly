@@ -1,5 +1,13 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const app = express();
+const cookieParser = require('cookie-parser');
+const db = require('./config/mongoose');
+
+
+app.use(express.urlencoded());
+app.use(cookieParser());
+
 
 const port = 5000;
 
