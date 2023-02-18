@@ -4,8 +4,8 @@ const app = express();
 const port = 5000;
 
 
-
-
+// use express router
+app.use('/',require('./routes/index'));
 
 
 
