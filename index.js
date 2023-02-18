@@ -6,7 +6,7 @@ const port = 5000;
 
 // use express router
 app.use('/',require('./routes/index'));
-
+app.use(express.static('assets'));
 // seet up the view engine
 app.set('view engine','ejs');
 app.set('views','./views');
