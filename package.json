@@ -13,6 +13,7 @@
   "author": "TarwayAyush",
   "license": "ISC",
   "dependencies": {
+    "@types/node-sass-middleware": "^0.0.32",
     "connect-mongo": "^4.6.0",
     "cookie-parser": "^1.4.6",
     "ejs": "^3.1.8",
@@ -20,9 +21,12 @@
     "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.17.3",
     "mongoose": "^6.9.2",
+    "node": "^19.6.0",
     "node-sass": "^8.0.0",
+    "node-sass-middleware": "^1.0.1",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
+    "sass-middleware": "^0.0.3",
     "uuid": "^9.0.0"
   }
 }
