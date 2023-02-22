@@ -4,7 +4,7 @@ const app = express();
 const cookieParser = require('cookie-parser');
 const expressLayouts = require('express-ejs-layouts');
 const db = require('./config/mongoose');
-const port = 5000;
+const port = 8000;
 // used for cookie-session
 const session = require('express-session')
 const passport = require('passport');
