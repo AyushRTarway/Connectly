@@ -1,11 +1,27 @@
 const User = require('../models/user');
  
-module.exports.profile = function(request,response){
-   //  response.end("<h1>User Profile</h1>")
-   return response.render('users_profile',{
-      title:"Ayush"
+module.exports.profile = function(req, res){//without the async await
+  User.findById(req.params.id, function(err, user){
+      return res.render('users_profile', {
+          title: 'User Profile',
+          profile_user: user
+      });
   });
- }
+}
+
+module.exports.update = function(request,response)
+{
+  if(request.user.id == request.params.id)
+  {
+    User.findByIdAndUpdate(request.params.id,request.body,function(err,user)
+    {
+      return response.redirect('back');
+    })
+  }else
+  {
+    return response.status(401).send('Unauthorized');
+  }
+}
 
 
 //render the sign in page 
@@ -16,7 +32,7 @@ module.exports.signUp = function(request,response){
     return response.redirect('/users/profile')
   }
     return response.render('user_sign_up',{
-      title:"Codeial | Sign Up"
+      title:"Connectly | Sign Up"
     })
 };
 
