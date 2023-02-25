@@ -1,18 +1,34 @@
 const Post = require('../models/post')
-const Comment = require('../models/comment')
+const Comment = require('../models/comment');
+const { request } = require('http');
 
 
 module.exports.create = async function(req, res)
 {
     try{
-        await Post.create({
+        let post = await Post.create({
             content: req.body.content,
             user: req.user._id
         });
-    
+
+        if (req.xhr)
+        {
+            // request.flash("success", "Post Published!");
+            // post = await post.populate("user", "name").execPopulate();
+            return res.status(200).json({
+                data: {
+                    post:post
+                },
+                message:"post created"
+            })
+            
+        }
+
+        request.flash('success', 'Post Published!');
         return res.redirect('back');
-    }catch(err){
-        console.log("Error ",err);
+    } catch (err) {
+        req.flash("error", err);
+        return res.redirect("back");
     }
 }
 
@@ -22,17 +38,32 @@ module.exports.destroy = async function(request,response){
         let post = await Post.findById(request.params.id);
         if(post.user == request.user.id)
         {
+
+            if (request.xhr) {
+                return response.status(200).json({
+                    data: {
+                        post_id: request.params.id
+                    },
+                    message: "Post deleted"
+                });
+            }
+
+
                 post.remove();
                 await Comment.deleteMany({post:request.params.id});
+                request.flash("success", "Post Deleted!");
                 return response.redirect('back');
         }
-        else{
+        else {
+            request.flash("error", "You can not delete this Post!");
             return response.redirect('back');
         }
     }catch(err){
-        console.log("Error ",err);
+        request.flash("error", err);
+        return res.redirect("back");
     }
 }
+
 
 
 

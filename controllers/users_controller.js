@@ -45,7 +45,7 @@ module.exports.signIn = function(request,response){
   }
 
   return response.render('user_sign_in',{
-    title:"Codeial | Sign In"
+    title:"Connectly | Sign In"
   })
 };
 
@@ -86,14 +86,18 @@ module.exports.create = function(request,response)
 //get the sign in and create a session for the user
 module.exports.createSession = function(request,response)
 {
+  request.flash('success', 'Logged-in Successfully!');
   return response.redirect('/');
 }
 
-module.exports.destroySession = function(request,response){
+module.exports.destroySession = function (request, response)
+{
   request.logout(request.user, err => {
-    if(err){
+    if (err)
+    {
     res.redirect("/");
     }
   });
+  request.flash("success", "You have logged out!");
   return response.redirect('/');
 };
