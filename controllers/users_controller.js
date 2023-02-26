@@ -1,4 +1,6 @@
 const User = require('../models/user');
+const fs = require('fs');
+const path = require('path');
  
 module.exports.profile = function(req, res){//without the async await
   User.findById(req.params.id, function(err, user){
@@ -9,18 +11,47 @@ module.exports.profile = function(req, res){//without the async await
   });
 }
 
-module.exports.update = function(request,response)
+module.exports.update = async function(request,response)
 {
-  if(request.user.id == request.params.id)
+  // if(request.user.id == request.params.id)
+  // {
+  //   let user = await User.findByIdAndUpdate(request.params.id,request.body)
+  //     return response.redirect('back');
+  // }else
+  // {
+  //   request.flash('error','Uauthorized');
+  //   return response.status(401).send('Unauthorized');
+  // }
+
+  if (request.user.id == request.params.id)
   {
-    User.findByIdAndUpdate(request.params.id,request.body,function(err,user)
-    {
+    try {
+      let user = await User.findById(request.params.id);
+      User.uploadedavatar(request, response, function (err) {
+        if (err) {
+          console.log('Multer Error : ', err);
+        }
+        // console.log(request.file);
+        user.name = request.body.name;
+        user.email = request.body.email;
+
+        if (request.file) { 
+
+          if (user.avatar) {
+            fs.unlinkSync(path.join(__dirname, '..', user.avatar));
+          }
+          //this is saving the path of the uploaded file into the avatar field in the user
+          user.avatar = User.avatarpath + '/' + request.file.filename;
+        }
+        user.save();
+        return response.redirect('back');
+      })
+      
+    } catch (err) {
+      request.flash('error', err);
       return response.redirect('back');
-    })
-  }else
-  {
-    return response.status(401).send('Unauthorized');
-  }
+    }
+    }
 }
 
 
@@ -101,3 +132,4 @@ module.exports.destroySession = function (request, response)
   request.flash("success", "You have logged out!");
   return response.redirect('/');
 };
+
