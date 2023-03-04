@@ -9,10 +9,21 @@ const port = 8000;
 const session = require('express-session')
 const passport = require('passport');
 const passportlocal = require('./config/passport-local-strategy');
+const passportJwt = require('./config/passport-jwt-strategy');
 const MongoStore = require('connect-mongo');
 const sassMiddleware =require('node-sass-middleware');
 const flash = require('connect-flash');
 const customware = require('./config/middleware');
+const passportgoogle = require("./config/passport-google-oauth2-strategy");
+
+
+//Setup the chat server
+const chatServer = require('http').Server(app);
+const chatSockets = require('./config/chat_socket').chatSockets(chatServer);
+const ChatPort = 5000;
+chatServer.listen(ChatPort);
+console.log(`Chat server is listening on port : ${ChatPort}`);
+
 
 app.use(sassMiddleware({
     src: './assets/scss',
@@ -21,9 +32,9 @@ app.use(sassMiddleware({
     outputStyle: 'extended',
     prefix: '/css'
 }));
-app.use(express.urlencoded());
+app.use(express.urlencoded());//to read url encoded
 app.use(cookieParser());
-
+app.use(express.json())// to read josn encoded
 
 // use express router
 app.use(express.static('./assets'));

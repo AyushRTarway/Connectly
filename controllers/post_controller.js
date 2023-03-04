@@ -1,6 +1,7 @@
 const Post = require('../models/post')
 const Comment = require('../models/comment');
-const { request } = require('http');
+const { req } = require('http');
+const Like = require("../models/like");
 
 
 module.exports.create = async function(req, res)
@@ -13,8 +14,8 @@ module.exports.create = async function(req, res)
 
         if (req.xhr)
         {
-            // request.flash("success", "Post Published!");
-            // post = await post.populate("user", "name").execPopulate();
+            post = await post.populate("user", "name");
+            req.flash("success", "Post Published!");
             return res.status(200).json({
                 data: {
                     post:post
@@ -24,7 +25,7 @@ module.exports.create = async function(req, res)
             
         }
 
-        request.flash('success', 'Post Published!');
+        req.flash('success', 'Post Published!');
         return res.redirect('back');
     } catch (err) {
         req.flash("error", err);
@@ -32,38 +33,38 @@ module.exports.create = async function(req, res)
     }
 }
 
-module.exports.destroy = async function(request,response){
+module.exports.destroy = async function(req,response){
     
     try{
-        let post = await Post.findById(request.params.id);
-        if(post.user == request.user.id)
+        let post = await Post.findById(req.params.id);
+        if(post.user == req.user.id)
         {
 
-            if (request.xhr) {
-                return response.status(200).json({
-                    data: {
-                        post_id: request.params.id
-                    },
-                    message: "Post deleted"
-                });
-            }
+            await Like.deleteMany({ likeable: post, onModel: "Post" });
+            await Like.deleteMany({ _id: { $in: post.comments } });
 
 
                 post.remove();
-                await Comment.deleteMany({post:request.params.id});
-                request.flash("success", "Post Deleted!");
-                return response.redirect('back');
+                await Comment.deleteMany({post:req.params.id});
+                if (req.xhr) {
+                return response.status(200).json({
+                    data: {
+                    post_id: req.params.id,
+                    },
+                    message: "Post deleted",
+                });
+            }
+             req.flash("success", "Post Deleted!");
+             return response.redirect("back");
         }
         else {
-            request.flash("error", "You can not delete this Post!");
+            req.flash("error", "You can not delete this Post!");
             return response.redirect('back');
         }
     }catch(err){
-        request.flash("error", err);
-        return res.redirect("back");
+        req.flash("error", err);
+        return response.redirect("back");
     }
 }
-
-
 
 

@@ -1,135 +1,147 @@
-const User = require('../models/user');
-const fs = require('fs');
-const path = require('path');
- 
-module.exports.profile = function(req, res){//without the async await
-  User.findById(req.params.id, function(err, user){
-      return res.render('users_profile', {
-          title: 'User Profile',
-          profile_user: user
-      });
+const User = require("../models/user");
+const Friendship = require("../models/friendship");
+const fs = require("fs");
+const path = require("path");
+
+// let's keep it same as before
+module.exports.profile = function (req, res) {
+  User.findById(req.params.id, function (err, user) {
+    return res.render("users_profile", {
+      title: "User Profile",
+      profile_user: user,
+    });
   });
-}
+};
 
-module.exports.update = async function(request,response)
-{
-  // if(request.user.id == request.params.id)
-  // {
-  //   let user = await User.findByIdAndUpdate(request.params.id,request.body)
-  //     return response.redirect('back');
-  // }else
-  // {
-  //   request.flash('error','Uauthorized');
-  //   return response.status(401).send('Unauthorized');
-  // }
-
-  if (request.user.id == request.params.id)
-  {
+module.exports.update = async function (req, res) {
+  if (req.user.id == req.params.id) {
     try {
-      let user = await User.findById(request.params.id);
-      User.uploadedavatar(request, response, function (err) {
+      let user = await User.findById(req.params.id);
+      User.uploadedAvatar(req, res, function (err) {
         if (err) {
-          console.log('Multer Error : ', err);
+          console.log("*****Multer Error: ", err);
         }
-        // console.log(request.file);
-        user.name = request.body.name;
-        user.email = request.body.email;
 
-        if (request.file) { 
+        user.name = req.body.name;
+        user.email = req.body.email;
 
+        if (req.file) {
           if (user.avatar) {
-            fs.unlinkSync(path.join(__dirname, '..', user.avatar));
+            fs.unlinkSync(path.join(__dirname, "..", user.avatar));
           }
-          //this is saving the path of the uploaded file into the avatar field in the user
-          user.avatar = User.avatarpath + '/' + request.file.filename;
+
+          // this is saving the path of the uploaded file into the avatar field in the user
+          user.avatar = User.avatarPath + "/" + req.file.filename;
         }
         user.save();
-        return response.redirect('back');
-      })
-      
+        return res.redirect("back");
+      });
     } catch (err) {
-      request.flash('error', err);
-      return response.redirect('back');
+      req.flash("error", err);
+      return res.redirect("back");
     }
-    }
-}
-
-
-//render the sign in page 
-module.exports.signUp = function(request,response){
-
-  if(request.isAuthenticated())
-  {
-    return response.redirect('/users/profile')
+  } else {
+    req.flash("error", "Unauthorized!");
+    return res.status(401).send("Unauthorized");
   }
-    return response.render('user_sign_up',{
-      title:"Connectly | Sign Up"
-    })
 };
 
-//render the sign up page
-module.exports.signIn = function(request,response){
-
-  if(request.isAuthenticated())
-  {
-    return response.redirect('/users/profile')
+// render the sign up page
+module.exports.signUp = function (req, res) {
+  if (req.isAuthenticated()) {
+    return res.redirect("/users/profile");
   }
 
-  return response.render('user_sign_in',{
-    title:"Connectly | Sign In"
+  return res.render("user_sign_up", {
+    title: "Codeial | Sign Up",
+  });
+};
+
+// render the sign in page
+module.exports.signIn = function (req, res) {
+  if (req.isAuthenticated()) {
+    return res.redirect("/users/profile");
+  }
+  return res.render("user_sign_in", {
+    title: "Codeial | Sign In",
+  });
+};
+
+// get the sign up data
+module.exports.create = function (req, res) {
+  if (req.body.password != req.body.confirm_password) {
+    req.flash("error", "Passwords do not match");
+    return res.redirect("back");
+  }
+
+  User.findOne({ email: req.body.email }, function (err, user) {
+    if (err) {
+      req.flash("error", err);
+      return;
+    }
+
+    if (!user) {
+      User.create(req.body, function (err, user) {
+        if (err) {
+          req.flash("error", err);
+          return;
+        }
+
+        return res.redirect("/users/sign-in");
+      });
+    } else {
+      req.flash("success", "You have signed up, login to continue!");
+      return res.redirect("back");
+    }
+  });
+};
+
+// sign in and create a session for the user
+module.exports.createSession = function (req, res) {
+  req.flash("success", "Logged in Successfully");
+  return res.redirect("/");
+};
+
+module.exports.destroySession = function (req, res) {
+  req.logout(function (err) {
+    if (err) {
+      return res.redirect("/");
+      return;
+    }
+  });
+  req.flash("success", "You have logged out!");
+
+  return res.redirect("/");
+};
+
+
+module.exports.addfriend = async function (req, res) {
+  let touser = req.params.id;
+  let fromuser = req.user._id;
+
+  const temp = await Friendship.find({
+    to_user: touser,
+    from_user: fromuser
+  });
+
+  if (temp)
+  {
+    return res.redirect("back");
+    }
+  const friend = await Friendship.create({
+    from_user: fromuser,
+    to_user: touser
   })
-};
 
+  const to_user_model = await User.findById(touser);
+  const from_user_model = await User.findById(fromuser);
 
-//get the sign up date
-module.exports.create = function(request,response)
-{
-  if(request.body.password  != request.body.confirm_password)
-  {
-    return response.redirect('back');
-  }
-  User.findOne({email:request.body.email},function(err,user)
-  {
-    if(err)
-    {
-              console.log('error in finding user in signing up '); return; 
-    }
+  to_user_model.friendships.push(friend);
+  from_user_model.friendships.push(friend);
 
-    if(!user)
-    {
-      User.create(request.body,function(err,user)
-      {
-        if(err){
-                  console.log('error in creating user while signing up '); return; 
-               }
+  await to_user_model.save();
+  await from_user_model.save();
 
-        return response.redirect('/users/sign-in');
-      })
-    }
-    else
-    {
-      return response.redirect('back');
-    }
+  return res.redirect('back');
 
-  });
 }
-
-//get the sign in and create a session for the user
-module.exports.createSession = function(request,response)
-{
-  request.flash('success', 'Logged-in Successfully!');
-  return response.redirect('/');
-}
-
-module.exports.destroySession = function (request, response)
-{
-  request.logout(request.user, err => {
-    if (err)
-    {
-    res.redirect("/");
-    }
-  });
-  request.flash("success", "You have logged out!");
-  return response.redirect('/');
-};
-
